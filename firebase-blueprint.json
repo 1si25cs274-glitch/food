@@ -1,0 +1,303 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Private user PII and account settings for FoodBridge India participants.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "accountType": { "type": "string", "enum": ["donor", "receiver", "volunteer"] },
+        "organizationName": { "type": "string" },
+        "address": { "type": "string" },
+        "district": { "type": "string" },
+        "state": { "type": "string" },
+        "pinCode": { "type": "string" },
+        "fssaiOrNgoId": { "type": "string" },
+        "preferredLanguage": { "type": "string", "enum": ["en", "hi", "kn"] },
+        "sharePhoneWithMatchedParties": { "type": "boolean" },
+        "shareExactLocationOnAccept": { "type": "boolean" },
+        "whatsappAlertsEnabled": { "type": "boolean" },
+        "ngoVerified": { "type": "boolean" },
+        "suspended": { "type": "boolean" },
+        "points": { "type": "integer" },
+        "mealsShared": { "type": "integer" },
+        "deliveriesCompleted": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId", "displayName", "email", "phone", "accountType", "organizationName",
+        "address", "district", "state", "pinCode", "fssaiOrNgoId", "preferredLanguage",
+        "sharePhoneWithMatchedParties", "shareExactLocationOnAccept", "whatsappAlertsEnabled",
+        "ngoVerified", "suspended", "points", "mealsShared", "deliveriesCompleted",
+        "createdAt", "updatedAt"
+      ]
+    },
+    "PublicProfile": {
+      "title": "PublicProfile",
+      "description": "Non-PII directory entry showing organization verification and impact stats.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "accountType": { "type": "string", "enum": ["donor", "receiver", "volunteer"] },
+        "organizationName": { "type": "string" },
+        "district": { "type": "string" },
+        "state": { "type": "string" },
+        "ngoVerified": { "type": "boolean" },
+        "ratingAvg": { "type": "number" },
+        "ratingCount": { "type": "integer" },
+        "mealsShared": { "type": "integer" },
+        "deliveriesCompleted": { "type": "integer" },
+        "isPublic": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId", "displayName", "accountType", "organizationName", "district", "state",
+        "ngoVerified", "ratingAvg", "ratingCount", "mealsShared", "deliveriesCompleted",
+        "isPublic", "createdAt", "updatedAt"
+      ]
+    },
+    "Donation": {
+      "title": "Donation",
+      "description": "Publicly browsable surplus food donation with safety metadata and approximate coordinates.",
+      "type": "object",
+      "properties": {
+        "donorId": { "type": "string" },
+        "donorOrgName": { "type": "string" },
+        "donorDisplayName": { "type": "string" },
+        "foodName": { "type": "string" },
+        "category": { "type": "string" },
+        "quantityKg": { "type": "number" },
+        "servings": { "type": "integer" },
+        "dietType": { "type": "string", "enum": ["veg", "non_veg", "vegan"] },
+        "preparedAtMillis": { "type": "integer" },
+        "expiryAtMillis": { "type": "integer" },
+        "storageType": { "type": "string" },
+        "allergens": { "type": "string" },
+        "isSafeConfirmed": { "type": "boolean" },
+        "areaLabel": { "type": "string" },
+        "district": { "type": "string" },
+        "state": { "type": "string" },
+        "pinCode": { "type": "string" },
+        "approxLat": { "type": "number" },
+        "approxLng": { "type": "number" },
+        "imageKey": { "type": "string" },
+        "imageBase64": { "type": "string" },
+        "trackingId": { "type": "string" },
+        "status": { "type": "string" },
+        "isActiveListing": { "type": "boolean" },
+        "acceptedReceiverId": { "type": "string" },
+        "acceptedReceiverName": { "type": "string" },
+        "assignedVolunteerId": { "type": "string" },
+        "assignedVolunteerName": { "type": "string" },
+        "volunteerLat": { "type": "number" },
+        "volunteerLng": { "type": "number" },
+        "locationSharingEnabled": { "type": "boolean" },
+        "qrPayload": { "type": "string" },
+        "isSample": { "type": "boolean" },
+        "estimatedValueInr": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "donorId", "donorOrgName", "donorDisplayName", "foodName", "category", "quantityKg",
+        "servings", "dietType", "preparedAtMillis", "expiryAtMillis", "storageType",
+        "isSafeConfirmed", "areaLabel", "district", "state", "pinCode", "approxLat",
+        "approxLng", "imageKey", "trackingId", "status", "isActiveListing",
+        "acceptedReceiverId", "acceptedReceiverName", "assignedVolunteerId",
+        "assignedVolunteerName", "volunteerLat", "volunteerLng", "locationSharingEnabled",
+        "qrPayload", "isSample", "estimatedValueInr", "createdAt", "updatedAt"
+      ]
+    },
+    "DonationPrivateDetails": {
+      "title": "DonationPrivateDetails",
+      "description": "PII-protected exact pickup address, exact GPS, +91 phones, and delivery OTP visible only to matched parties.",
+      "type": "object",
+      "properties": {
+        "donorId": { "type": "string" },
+        "acceptedReceiverId": { "type": "string" },
+        "assignedVolunteerId": { "type": "string" },
+        "donorPhone": { "type": "string" },
+        "receiverPhone": { "type": "string" },
+        "volunteerPhone": { "type": "string" },
+        "exactAddress": { "type": "string" },
+        "exactLat": { "type": "number" },
+        "exactLng": { "type": "number" },
+        "deliveryOtp": { "type": "string" },
+        "contactConsent": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "donorId", "acceptedReceiverId", "assignedVolunteerId", "donorPhone",
+        "receiverPhone", "volunteerPhone", "exactAddress", "exactLat", "exactLng",
+        "deliveryOtp", "contactConsent", "updatedAt"
+      ]
+    },
+    "FoodRequest": {
+      "title": "FoodRequest",
+      "description": "Food claim request submitted by an NGO, shelter, or individual receiver.",
+      "type": "object",
+      "properties": {
+        "donationId": { "type": "string" },
+        "donorId": { "type": "string" },
+        "receiverId": { "type": "string" },
+        "receiverName": { "type": "string" },
+        "receiverOrgType": { "type": "string" },
+        "requestedServings": { "type": "integer" },
+        "notes": { "type": "string" },
+        "urgency": { "type": "string", "enum": ["normal", "emergency"] },
+        "status": { "type": "string", "enum": ["pending", "accepted", "rejected", "cancelled"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "donationId", "donorId", "receiverId", "receiverName", "receiverOrgType",
+        "requestedServings", "notes", "urgency", "status", "createdAt", "updatedAt"
+      ]
+    },
+    "EmergencyRequest": {
+      "title": "EmergencyRequest",
+      "description": "Urgent community food assistance request.",
+      "type": "object",
+      "properties": {
+        "requesterId": { "type": "string" },
+        "requesterName": { "type": "string" },
+        "organizationType": { "type": "string" },
+        "district": { "type": "string" },
+        "state": { "type": "string" },
+        "pinCode": { "type": "string" },
+        "areaLabel": { "type": "string" },
+        "servingsNeeded": { "type": "integer" },
+        "dietPreference": { "type": "string" },
+        "urgencyReason": { "type": "string" },
+        "status": { "type": "string", "enum": ["open", "fulfilled", "closed"] },
+        "fulfilledByOrg": { "type": "string" },
+        "isActive": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "requesterId", "requesterName", "organizationType", "district", "state",
+        "pinCode", "areaLabel", "servingsNeeded", "dietPreference", "urgencyReason",
+        "status", "fulfilledByOrg", "isActive", "createdAt", "updatedAt"
+      ]
+    },
+    "Complaint": {
+      "title": "Complaint",
+      "description": "Food safety or suspicious account complaint for admin moderation.",
+      "type": "object",
+      "properties": {
+        "reporterId": { "type": "string" },
+        "reporterName": { "type": "string" },
+        "targetDonationId": { "type": "string" },
+        "targetUserId": { "type": "string" },
+        "category": { "type": "string" },
+        "description": { "type": "string" },
+        "severity": { "type": "string", "enum": ["low", "medium", "high"] },
+        "status": { "type": "string", "enum": ["open", "investigating", "resolved", "dismissed"] },
+        "adminNotes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "reporterId", "reporterName", "targetDonationId", "targetUserId", "category",
+        "description", "severity", "status", "adminNotes", "createdAt", "updatedAt"
+      ]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "Ratings and feedback after completed food delivery.",
+      "type": "object",
+      "properties": {
+        "donationId": { "type": "string" },
+        "reviewerId": { "type": "string" },
+        "reviewerName": { "type": "string" },
+        "targetUserId": { "type": "string" },
+        "rating": { "type": "integer" },
+        "comment": { "type": "string" },
+        "isPublic": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "donationId", "reviewerId", "reviewerName", "targetUserId",
+        "rating", "comment", "isPublic", "createdAt"
+      ]
+    },
+    "NotificationItem": {
+      "title": "NotificationItem",
+      "description": "User-scoped notification alert.",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string" },
+        "title": { "type": "string" },
+        "body": { "type": "string" },
+        "type": { "type": "string" },
+        "donationId": { "type": "string" },
+        "isRead": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["senderId", "title", "body", "type", "donationId", "isRead", "createdAt"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Immutable system audit trail entry.",
+      "type": "object",
+      "properties": {
+        "actorId": { "type": "string" },
+        "actorName": { "type": "string" },
+        "action": { "type": "string" },
+        "targetPath": { "type": "string" },
+        "summary": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["actorId", "actorName", "action", "targetPath", "summary", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private user profile PII."
+    },
+    "/public_profiles/{userId}": {
+      "schema": { "$ref": "#/entities/PublicProfile" },
+      "description": "Publicly visible non-PII organization and volunteer profile."
+    },
+    "/donations/{donationId}": {
+      "schema": { "$ref": "#/entities/Donation" },
+      "description": "Surplus food donation listings and live tracking state."
+    },
+    "/donations/{donationId}/private/{docId}": {
+      "schema": { "$ref": "#/entities/DonationPrivateDetails" },
+      "description": "Protected contact numbers, exact pickup address, and OTP."
+    },
+    "/food_requests/{requestId}": {
+      "schema": { "$ref": "#/entities/FoodRequest" },
+      "description": "Receiver requests for specific donations."
+    },
+    "/emergency_requests/{emergencyId}": {
+      "schema": { "$ref": "#/entities/EmergencyRequest" },
+      "description": "Urgent shelter and disaster food requests."
+    },
+    "/complaints/{complaintId}": {
+      "schema": { "$ref": "#/entities/Complaint" },
+      "description": "Safety complaints and suspicious account reports."
+    },
+    "/reviews/{reviewId}": {
+      "schema": { "$ref": "#/entities/Review" },
+      "description": "Handoff ratings and reviews."
+    },
+    "/users/{userId}/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/NotificationItem" },
+      "description": "User-scoped notifications."
+    },
+    "/audit_logs/{logId}": {
+      "schema": { "$ref": "#/entities/AuditLog" },
+      "description": "Append-only audit logs."
+    }
+  }
+}

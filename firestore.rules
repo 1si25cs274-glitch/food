@@ -1,0 +1,625 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (request.auth.token.email_verified == true && request.auth.token.email == '1si25cs274@sit.ac.in')
+      );
+    }
+
+    function isValidTimestamp(ts) {
+      return ts is timestamp && ts <= request.time;
+    }
+
+    function isNumber(v) {
+      return v is int || v is float;
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 80 &&
+             data.email is string && data.email.size() <= 160 &&
+             data.phone is string && data.phone.size() <= 20 &&
+             data.accountType is string && data.accountType in ['donor', 'receiver', 'volunteer'] &&
+             data.organizationName is string && data.organizationName.size() <= 120 &&
+             data.address is string && data.address.size() <= 250 &&
+             data.district is string && data.district.size() <= 80 &&
+             data.state is string && data.state.size() <= 80 &&
+             data.pinCode is string && data.pinCode.size() <= 10 &&
+             data.fssaiOrNgoId is string && data.fssaiOrNgoId.size() <= 60 &&
+             data.preferredLanguage is string && data.preferredLanguage in ['en', 'hi', 'kn'] &&
+             data.sharePhoneWithMatchedParties is bool &&
+             data.shareExactLocationOnAccept is bool &&
+             data.whatsappAlertsEnabled is bool &&
+             data.ngoVerified is bool &&
+             data.suspended is bool &&
+             data.points is int && data.points >= 0 && data.points <= 1000000 &&
+             data.mealsShared is int && data.mealsShared >= 0 && data.mealsShared <= 1000000 &&
+             data.deliveriesCompleted is int && data.deliveriesCompleted >= 0 && data.deliveriesCompleted <= 1000000 &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidPublicProfile(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 80 &&
+             data.accountType is string && data.accountType in ['donor', 'receiver', 'volunteer'] &&
+             data.organizationName is string && data.organizationName.size() <= 120 &&
+             data.district is string && data.district.size() <= 80 &&
+             data.state is string && data.state.size() <= 80 &&
+             data.ngoVerified is bool &&
+             isNumber(data.ratingAvg) && data.ratingAvg >= 0 && data.ratingAvg <= 5 &&
+             data.ratingCount is int && data.ratingCount >= 0 && data.ratingCount <= 1000000 &&
+             data.mealsShared is int && data.mealsShared >= 0 && data.mealsShared <= 1000000 &&
+             data.deliveriesCompleted is int && data.deliveriesCompleted >= 0 && data.deliveriesCompleted <= 1000000 &&
+             data.isPublic is bool &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidDonation(data) {
+      return data.donorId is string && data.donorId.size() >= 1 && data.donorId.size() <= 128 &&
+             data.donorOrgName is string && data.donorOrgName.size() >= 1 && data.donorOrgName.size() <= 120 &&
+             data.donorDisplayName is string && data.donorDisplayName.size() >= 1 && data.donorDisplayName.size() <= 80 &&
+             data.foodName is string && data.foodName.size() >= 2 && data.foodName.size() <= 120 &&
+             data.category is string && data.category in [
+               'Cooked Meals', 'Raw Grains & Groceries', 'Bakery & Dairy',
+               'Fruits & Vegetables', 'Packaged Ration', 'Event Surplus'
+             ] &&
+             isNumber(data.quantityKg) && data.quantityKg > 0 && data.quantityKg <= 50000 &&
+             data.servings is int && data.servings >= 1 && data.servings <= 50000 &&
+             data.dietType is string && data.dietType in ['veg', 'non_veg', 'vegan'] &&
+             data.preparedAtMillis is int && data.preparedAtMillis > 0 &&
+             data.expiryAtMillis is int && data.expiryAtMillis > data.preparedAtMillis &&
+             data.storageType is string && data.storageType in [
+               'Hot Box', 'Refrigerated (0-5°C)', 'Ambient Dry', 'Frozen (-18°C)'
+             ] &&
+             data.allergens is list && data.allergens.size() <= 10 &&
+             (data.allergens.size() == 0 || data.allergens[0] is string) &&
+             data.isSafeConfirmed is bool && data.isSafeConfirmed == true &&
+             data.areaLabel is string && data.areaLabel.size() >= 2 && data.areaLabel.size() <= 120 &&
+             data.district is string && data.district.size() >= 2 && data.district.size() <= 80 &&
+             data.state is string && data.state.size() >= 2 && data.state.size() <= 80 &&
+             data.pinCode is string && data.pinCode.size() >= 4 && data.pinCode.size() <= 10 &&
+             isNumber(data.approxLat) && data.approxLat >= -90 && data.approxLat <= 90 &&
+             isNumber(data.approxLng) && data.approxLng >= -180 && data.approxLng <= 180 &&
+             data.imageKey is string && data.imageKey.size() <= 120 &&
+             (!('imageBase64' in data) || (data.imageBase64 is string && data.imageBase64.size() <= 150000)) &&
+             data.trackingId is string && data.trackingId.size() >= 4 && data.trackingId.size() <= 40 &&
+             data.status is string && data.status in [
+               'Donation Posted', 'Request Received', 'Accepted', 'Volunteer Assigned',
+               'Food Picked Up', 'Out for Delivery', 'Delivered', 'Completed', 'Cancelled'
+             ] &&
+             data.isActiveListing is bool &&
+             data.acceptedReceiverId is string && data.acceptedReceiverId.size() <= 128 &&
+             data.acceptedReceiverName is string && data.acceptedReceiverName.size() <= 120 &&
+             data.assignedVolunteerId is string && data.assignedVolunteerId.size() <= 128 &&
+             data.assignedVolunteerName is string && data.assignedVolunteerName.size() <= 120 &&
+             isNumber(data.volunteerLat) && data.volunteerLat >= -90 && data.volunteerLat <= 90 &&
+             isNumber(data.volunteerLng) && data.volunteerLng >= -180 && data.volunteerLng <= 180 &&
+             data.locationSharingEnabled is bool &&
+             data.qrPayload is string && data.qrPayload.size() <= 200 &&
+             data.isSample is bool &&
+             data.estimatedValueInr is int && data.estimatedValueInr >= 0 && data.estimatedValueInr <= 10000000 &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidDonationPrivate(data) {
+      return data.donorId is string && data.donorId.size() >= 1 && data.donorId.size() <= 128 &&
+             data.acceptedReceiverId is string && data.acceptedReceiverId.size() <= 128 &&
+             data.assignedVolunteerId is string && data.assignedVolunteerId.size() <= 128 &&
+             data.donorPhone is string && data.donorPhone.size() <= 20 &&
+             data.receiverPhone is string && data.receiverPhone.size() <= 20 &&
+             data.volunteerPhone is string && data.volunteerPhone.size() <= 20 &&
+             data.exactAddress is string && data.exactAddress.size() <= 250 &&
+             isNumber(data.exactLat) && data.exactLat >= -90 && data.exactLat <= 90 &&
+             isNumber(data.exactLng) && data.exactLng >= -180 && data.exactLng <= 180 &&
+             data.deliveryOtp is string && data.deliveryOtp.size() >= 4 && data.deliveryOtp.size() <= 8 &&
+             data.contactConsent is bool &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidFoodRequest(data) {
+      return data.donationId is string && data.donationId.size() >= 1 && data.donationId.size() <= 128 &&
+             data.donorId is string && data.donorId.size() >= 1 && data.donorId.size() <= 128 &&
+             data.receiverId is string && data.receiverId.size() >= 1 && data.receiverId.size() <= 128 &&
+             data.receiverName is string && data.receiverName.size() >= 1 && data.receiverName.size() <= 120 &&
+             data.receiverOrgType is string && data.receiverOrgType.size() >= 1 && data.receiverOrgType.size() <= 60 &&
+             data.requestedServings is int && data.requestedServings >= 1 && data.requestedServings <= 50000 &&
+             data.notes is string && data.notes.size() <= 300 &&
+             data.urgency is string && data.urgency in ['normal', 'emergency'] &&
+             data.status is string && data.status in ['pending', 'accepted', 'rejected', 'cancelled'] &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidEmergencyRequest(data) {
+      return data.requesterId is string && data.requesterId.size() >= 1 && data.requesterId.size() <= 128 &&
+             data.requesterName is string && data.requesterName.size() >= 1 && data.requesterName.size() <= 120 &&
+             data.organizationType is string && data.organizationType.size() >= 1 && data.organizationType.size() <= 60 &&
+             data.district is string && data.district.size() >= 2 && data.district.size() <= 80 &&
+             data.state is string && data.state.size() >= 2 && data.state.size() <= 80 &&
+             data.pinCode is string && data.pinCode.size() >= 4 && data.pinCode.size() <= 10 &&
+             data.areaLabel is string && data.areaLabel.size() >= 2 && data.areaLabel.size() <= 120 &&
+             data.servingsNeeded is int && data.servingsNeeded >= 1 && data.servingsNeeded <= 50000 &&
+             data.dietPreference is string && data.dietPreference in ['veg', 'non_veg', 'any'] &&
+             data.urgencyReason is string && data.urgencyReason.size() >= 3 && data.urgencyReason.size() <= 300 &&
+             data.status is string && data.status in ['open', 'fulfilled', 'closed'] &&
+             data.fulfilledByOrg is string && data.fulfilledByOrg.size() <= 120 &&
+             data.isActive is bool &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidComplaint(data) {
+      return data.reporterId is string && data.reporterId.size() >= 1 && data.reporterId.size() <= 128 &&
+             data.reporterName is string && data.reporterName.size() >= 1 && data.reporterName.size() <= 100 &&
+             data.targetDonationId is string && data.targetDonationId.size() <= 128 &&
+             data.targetUserId is string && data.targetUserId.size() <= 128 &&
+             data.category is string && data.category in [
+               'expired_food', 'hygiene_issue', 'suspicious_account', 'no_show', 'other'
+             ] &&
+             data.description is string && data.description.size() >= 5 && data.description.size() <= 500 &&
+             data.severity is string && data.severity in ['low', 'medium', 'high'] &&
+             data.status is string && data.status in ['open', 'investigating', 'resolved', 'dismissed'] &&
+             data.adminNotes is string && data.adminNotes.size() <= 400 &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidReview(data) {
+      return data.donationId is string && data.donationId.size() >= 1 && data.donationId.size() <= 128 &&
+             data.reviewerId is string && data.reviewerId.size() >= 1 && data.reviewerId.size() <= 128 &&
+             data.reviewerName is string && data.reviewerName.size() >= 1 && data.reviewerName.size() <= 100 &&
+             data.targetUserId is string && data.targetUserId.size() >= 1 && data.targetUserId.size() <= 128 &&
+             data.rating is int && data.rating >= 1 && data.rating <= 5 &&
+             data.comment is string && data.comment.size() <= 400 &&
+             data.isPublic is bool &&
+             isValidTimestamp(data.createdAt);
+    }
+
+    function isValidNotification(data) {
+      return data.senderId is string && data.senderId.size() >= 1 && data.senderId.size() <= 128 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+             data.body is string && data.body.size() >= 1 && data.body.size() <= 300 &&
+             data.type is string && data.type.size() >= 1 && data.type.size() <= 40 &&
+             data.donationId is string && data.donationId.size() <= 128 &&
+             data.isRead is bool &&
+             isValidTimestamp(data.createdAt);
+    }
+
+    function isValidAuditLog(data) {
+      return data.actorId is string && data.actorId.size() >= 1 && data.actorId.size() <= 128 &&
+             data.actorName is string && data.actorName.size() >= 1 && data.actorName.size() <= 100 &&
+             data.action is string && data.action.size() >= 2 && data.action.size() <= 80 &&
+             data.targetPath is string && data.targetPath.size() >= 1 && data.targetPath.size() <= 200 &&
+             data.summary is string && data.summary.size() >= 1 && data.summary.size() <= 300 &&
+             isValidTimestamp(data.createdAt);
+    }
+
+    match /admins/{uid} {
+      allow get: if isValidId(uid) && isSignedIn() && (request.auth.uid == uid || isAdmin());
+      allow list, write: if false;
+    }
+
+    match /users/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
+
+      allow create: if isValidId(userId) &&
+                       isOwner(userId) &&
+                       incoming().userId == userId &&
+                       incoming().ngoVerified == false &&
+                       incoming().suspended == false &&
+                       incoming().points == 0 &&
+                       incoming().mealsShared == 0 &&
+                       incoming().deliveriesCompleted == 0 &&
+                       incoming().keys().hasAll([
+                         'userId', 'displayName', 'email', 'phone', 'accountType',
+                         'organizationName', 'address', 'district', 'state', 'pinCode',
+                         'fssaiOrNgoId', 'preferredLanguage', 'sharePhoneWithMatchedParties',
+                         'shareExactLocationOnAccept', 'whatsappAlertsEnabled', 'ngoVerified',
+                         'suspended', 'points', 'mealsShared', 'deliveriesCompleted',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'displayName', 'email', 'phone', 'accountType',
+                         'organizationName', 'address', 'district', 'state', 'pinCode',
+                         'fssaiOrNgoId', 'preferredLanguage', 'sharePhoneWithMatchedParties',
+                         'shareExactLocationOnAccept', 'whatsappAlertsEnabled', 'ngoVerified',
+                         'suspended', 'points', 'mealsShared', 'deliveriesCompleted',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidUserProfile(incoming());
+
+      allow update: if isValidId(userId) &&
+                       isSignedIn() &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       (
+                         isAdmin() ||
+                         (
+                           isOwner(userId) &&
+                           incoming().ngoVerified == existing().ngoVerified &&
+                           incoming().suspended == existing().suspended &&
+                           incoming().diff(existing()).affectedKeys().hasOnly([
+                             'displayName', 'phone', 'accountType', 'organizationName',
+                             'address', 'district', 'state', 'pinCode', 'fssaiOrNgoId',
+                             'preferredLanguage', 'sharePhoneWithMatchedParties',
+                             'shareExactLocationOnAccept', 'whatsappAlertsEnabled',
+                             'points', 'mealsShared', 'deliveriesCompleted', 'updatedAt'
+                           ])
+                         )
+                       );
+
+      allow delete: if isValidId(userId) && (isOwner(userId) || isAdmin());
+
+      match /notifications/{notificationId} {
+        allow get: if isValidId(userId) && isValidId(notificationId) && isSignedIn() && (request.auth.uid == userId || isAdmin());
+        allow list: if isValidId(userId) && isSignedIn() && (request.auth.uid == userId || isAdmin());
+        allow create: if isValidId(userId) && isValidId(notificationId) && isSignedIn() &&
+                         incoming().keys().hasAll(['senderId', 'title', 'body', 'type', 'donationId', 'isRead', 'createdAt']) &&
+                         incoming().keys().hasOnly(['senderId', 'title', 'body', 'type', 'donationId', 'isRead', 'createdAt']) &&
+                         isValidNotification(incoming()) &&
+                         (request.auth.uid == userId || incoming().senderId == request.auth.uid || isAdmin());
+        allow update: if isValidId(userId) && isValidId(notificationId) && isSignedIn() &&
+                         (request.auth.uid == userId || isAdmin()) &&
+                         isValidNotification(incoming()) &&
+                         incoming().senderId == existing().senderId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['isRead']);
+        allow delete: if isValidId(userId) && isValidId(notificationId) && isSignedIn() && (request.auth.uid == userId || isAdmin());
+      }
+    }
+
+    match /public_profiles/{userId} {
+      allow get: if isValidId(userId) && isSignedIn();
+      allow list: if isSignedIn() && (resource.data.isPublic == true || resource.data.userId == request.auth.uid || isAdmin());
+
+      allow create: if isValidId(userId) &&
+                       isOwner(userId) &&
+                       incoming().userId == userId &&
+                       incoming().ngoVerified == false &&
+                       incoming().keys().hasAll([
+                         'userId', 'displayName', 'accountType', 'organizationName',
+                         'district', 'state', 'ngoVerified', 'ratingAvg', 'ratingCount',
+                         'mealsShared', 'deliveriesCompleted', 'isPublic', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'displayName', 'accountType', 'organizationName',
+                         'district', 'state', 'ngoVerified', 'ratingAvg', 'ratingCount',
+                         'mealsShared', 'deliveriesCompleted', 'isPublic', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidPublicProfile(incoming());
+
+      allow update: if isValidId(userId) &&
+                       isSignedIn() &&
+                       isValidPublicProfile(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       (
+                         isAdmin() ||
+                         (
+                           isOwner(userId) &&
+                           incoming().ngoVerified == existing().ngoVerified &&
+                           incoming().diff(existing()).affectedKeys().hasOnly([
+                             'displayName', 'accountType', 'organizationName', 'district',
+                             'state', 'mealsShared', 'deliveriesCompleted', 'isPublic', 'updatedAt'
+                           ])
+                         ) ||
+                         incoming().diff(existing()).affectedKeys().hasOnly(['ratingAvg', 'ratingCount', 'updatedAt'])
+                       );
+
+      allow delete: if isValidId(userId) && (isOwner(userId) || isAdmin());
+    }
+
+    match /donations/{donationId} {
+      allow get: if isValidId(donationId) && isSignedIn() && (
+        isAdmin() ||
+        existing().isActiveListing == true ||
+        existing().donorId == request.auth.uid ||
+        existing().acceptedReceiverId == request.auth.uid ||
+        existing().assignedVolunteerId == request.auth.uid
+      );
+
+      allow list: if isSignedIn() && (
+        isAdmin() ||
+        (resource.data.isActiveListing == true && resource.data.isSafeConfirmed == true) ||
+        resource.data.donorId == request.auth.uid ||
+        resource.data.acceptedReceiverId == request.auth.uid ||
+        resource.data.assignedVolunteerId == request.auth.uid
+      );
+
+      allow create: if isValidId(donationId) &&
+                       isSignedIn() &&
+                       incoming().donorId == request.auth.uid &&
+                       incoming().status == 'Donation Posted' &&
+                       incoming().isActiveListing == true &&
+                       incoming().isSafeConfirmed == true &&
+                       incoming().acceptedReceiverId == '' &&
+                       incoming().assignedVolunteerId == '' &&
+                       incoming().keys().hasAll([
+                         'donorId', 'donorOrgName', 'donorDisplayName', 'foodName', 'category',
+                         'quantityKg', 'servings', 'dietType', 'preparedAtMillis', 'expiryAtMillis',
+                         'storageType', 'allergens', 'isSafeConfirmed', 'areaLabel', 'district',
+                         'state', 'pinCode', 'approxLat', 'approxLng', 'imageKey', 'trackingId',
+                         'status', 'isActiveListing', 'acceptedReceiverId', 'acceptedReceiverName',
+                         'assignedVolunteerId', 'assignedVolunteerName', 'volunteerLat', 'volunteerLng',
+                         'locationSharingEnabled', 'qrPayload', 'isSample', 'estimatedValueInr',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'donorId', 'donorOrgName', 'donorDisplayName', 'foodName', 'category',
+                         'quantityKg', 'servings', 'dietType', 'preparedAtMillis', 'expiryAtMillis',
+                         'storageType', 'allergens', 'isSafeConfirmed', 'areaLabel', 'district',
+                         'state', 'pinCode', 'approxLat', 'approxLng', 'imageKey', 'imageBase64',
+                         'trackingId', 'status', 'isActiveListing', 'acceptedReceiverId',
+                         'acceptedReceiverName', 'assignedVolunteerId', 'assignedVolunteerName',
+                         'volunteerLat', 'volunteerLng', 'locationSharingEnabled', 'qrPayload',
+                         'isSample', 'estimatedValueInr', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidDonation(incoming());
+
+      allow update: if isValidId(donationId) &&
+                       isSignedIn() &&
+                       isValidDonation(incoming()) &&
+                       incoming().donorId == existing().donorId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().trackingId == existing().trackingId &&
+                       (
+                         isAdmin() ||
+                         (
+                           existing().status != 'Completed' &&
+                           existing().status != 'Cancelled' &&
+                           (
+                             (
+                               existing().donorId == request.auth.uid &&
+                               incoming().diff(existing()).affectedKeys().hasOnly([
+                                 'foodName', 'category', 'quantityKg', 'servings', 'dietType',
+                                 'preparedAtMillis', 'expiryAtMillis', 'storageType', 'allergens',
+                                 'areaLabel', 'district', 'state', 'pinCode', 'approxLat',
+                                 'approxLng', 'imageKey', 'imageBase64', 'status', 'isActiveListing',
+                                 'acceptedReceiverId', 'acceptedReceiverName', 'assignedVolunteerId',
+                                 'assignedVolunteerName', 'estimatedValueInr', 'updatedAt'
+                               ])
+                             ) ||
+                             (
+                               existing().status == 'Donation Posted' &&
+                               incoming().status == 'Request Received' &&
+                               incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+                             ) ||
+                             (
+                               existing().status in ['Donation Posted', 'Request Received', 'Accepted'] &&
+                               existing().assignedVolunteerId == '' &&
+                               incoming().assignedVolunteerId == request.auth.uid &&
+                               incoming().status == 'Volunteer Assigned' &&
+                               incoming().diff(existing()).affectedKeys().hasOnly([
+                                 'assignedVolunteerId', 'assignedVolunteerName', 'status', 'updatedAt'
+                               ])
+                             ) ||
+                             (
+                               (
+                                 existing().assignedVolunteerId == request.auth.uid ||
+                                 existing().acceptedReceiverId == request.auth.uid ||
+                                 existing().donorId == request.auth.uid
+                               ) &&
+                               incoming().diff(existing()).affectedKeys().hasOnly([
+                                 'status', 'isActiveListing', 'volunteerLat', 'volunteerLng',
+                                 'locationSharingEnabled', 'updatedAt'
+                               ])
+                             )
+                           )
+                         )
+                       );
+
+      allow delete: if isValidId(donationId) && isSignedIn() && (
+        isAdmin() ||
+        (existing().donorId == request.auth.uid && existing().status in ['Donation Posted', 'Cancelled'])
+      );
+
+      match /private/{docId} {
+        allow get: if isValidId(donationId) && docId == 'details' && isSignedIn() && (
+          isAdmin() ||
+          get(/databases/$(database)/documents/donations/$(donationId)).data.donorId == request.auth.uid ||
+          get(/databases/$(database)/documents/donations/$(donationId)).data.acceptedReceiverId == request.auth.uid ||
+          get(/databases/$(database)/documents/donations/$(donationId)).data.assignedVolunteerId == request.auth.uid
+        );
+        allow list: if false;
+        allow create: if isValidId(donationId) && docId == 'details' && isSignedIn() &&
+                         incoming().donorId == request.auth.uid &&
+                         get(/databases/$(database)/documents/donations/$(donationId)).data.donorId == request.auth.uid &&
+                         incoming().keys().hasAll([
+                           'donorId', 'acceptedReceiverId', 'assignedVolunteerId', 'donorPhone',
+                           'receiverPhone', 'volunteerPhone', 'exactAddress', 'exactLat', 'exactLng',
+                           'deliveryOtp', 'contactConsent', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'donorId', 'acceptedReceiverId', 'assignedVolunteerId', 'donorPhone',
+                           'receiverPhone', 'volunteerPhone', 'exactAddress', 'exactLat', 'exactLng',
+                           'deliveryOtp', 'contactConsent', 'updatedAt'
+                         ]) &&
+                         isValidDonationPrivate(incoming());
+        allow update: if isValidId(donationId) && docId == 'details' && isSignedIn() &&
+                         isValidDonationPrivate(incoming()) &&
+                         incoming().donorId == existing().donorId &&
+                         (
+                           isAdmin() ||
+                           get(/databases/$(database)/documents/donations/$(donationId)).data.donorId == request.auth.uid ||
+                           get(/databases/$(database)/documents/donations/$(donationId)).data.acceptedReceiverId == request.auth.uid ||
+                           get(/databases/$(database)/documents/donations/$(donationId)).data.assignedVolunteerId == request.auth.uid
+                         ) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'acceptedReceiverId', 'assignedVolunteerId', 'donorPhone', 'receiverPhone',
+                           'volunteerPhone', 'exactAddress', 'exactLat', 'exactLng', 'contactConsent', 'updatedAt'
+                         ]);
+        allow delete: if isValidId(donationId) && docId == 'details' && isSignedIn() && (
+          isAdmin() ||
+          get(/databases/$(database)/documents/donations/$(donationId)).data.donorId == request.auth.uid
+        );
+      }
+    }
+
+    match /food_requests/{requestId} {
+      allow get: if isValidId(requestId) && isSignedIn() && (
+        isAdmin() ||
+        existing().receiverId == request.auth.uid ||
+        existing().donorId == request.auth.uid
+      );
+      allow list: if isSignedIn() && (
+        isAdmin() ||
+        resource.data.receiverId == request.auth.uid ||
+        resource.data.donorId == request.auth.uid
+      );
+      allow create: if isValidId(requestId) && isSignedIn() &&
+                       incoming().receiverId == request.auth.uid &&
+                       incoming().status == 'pending' &&
+                       incoming().keys().hasAll([
+                         'donationId', 'donorId', 'receiverId', 'receiverName', 'receiverOrgType',
+                         'requestedServings', 'notes', 'urgency', 'status', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'donationId', 'donorId', 'receiverId', 'receiverName', 'receiverOrgType',
+                         'requestedServings', 'notes', 'urgency', 'status', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidFoodRequest(incoming()) &&
+                       exists(/databases/$(database)/documents/donations/$(incoming().donationId));
+      allow update: if isValidId(requestId) && isSignedIn() &&
+                       isValidFoodRequest(incoming()) &&
+                       incoming().donationId == existing().donationId &&
+                       incoming().donorId == existing().donorId &&
+                       incoming().receiverId == existing().receiverId &&
+                       incoming().createdAt == existing().createdAt &&
+                       (
+                         isAdmin() ||
+                         (
+                           existing().donorId == request.auth.uid &&
+                           incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+                         ) ||
+                         (
+                           existing().receiverId == request.auth.uid &&
+                           incoming().diff(existing()).affectedKeys().hasOnly(['status', 'requestedServings', 'notes', 'updatedAt'])
+                         )
+                       );
+      allow delete: if isValidId(requestId) && isSignedIn() && (isAdmin() || existing().receiverId == request.auth.uid);
+    }
+
+    match /emergency_requests/{emergencyId} {
+      allow get: if isValidId(emergencyId) && isSignedIn();
+      allow list: if isSignedIn() && (
+        isAdmin() ||
+        resource.data.isActive == true ||
+        resource.data.requesterId == request.auth.uid
+      );
+      allow create: if isValidId(emergencyId) && isSignedIn() &&
+                       incoming().requesterId == request.auth.uid &&
+                       incoming().status == 'open' &&
+                       incoming().keys().hasAll([
+                         'requesterId', 'requesterName', 'organizationType', 'district', 'state',
+                         'pinCode', 'areaLabel', 'servingsNeeded', 'dietPreference', 'urgencyReason',
+                         'status', 'fulfilledByOrg', 'isActive', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'requesterId', 'requesterName', 'organizationType', 'district', 'state',
+                         'pinCode', 'areaLabel', 'servingsNeeded', 'dietPreference', 'urgencyReason',
+                         'status', 'fulfilledByOrg', 'isActive', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidEmergencyRequest(incoming());
+      allow update: if isValidId(emergencyId) && isSignedIn() &&
+                       isValidEmergencyRequest(incoming()) &&
+                       incoming().requesterId == existing().requesterId &&
+                       incoming().createdAt == existing().createdAt &&
+                       (
+                         isAdmin() ||
+                         existing().requesterId == request.auth.uid ||
+                         incoming().diff(existing()).affectedKeys().hasOnly(['status', 'isActive', 'fulfilledByOrg', 'updatedAt'])
+                       );
+      allow delete: if isValidId(emergencyId) && isSignedIn() && (isAdmin() || existing().requesterId == request.auth.uid);
+    }
+
+    match /complaints/{complaintId} {
+      allow get: if isValidId(complaintId) && isSignedIn() && (isAdmin() || existing().reporterId == request.auth.uid);
+      allow list: if isSignedIn() && (isAdmin() || resource.data.reporterId == request.auth.uid);
+      allow create: if isValidId(complaintId) && isSignedIn() &&
+                       incoming().reporterId == request.auth.uid &&
+                       incoming().status == 'open' &&
+                       incoming().keys().hasAll([
+                         'reporterId', 'reporterName', 'targetDonationId', 'targetUserId',
+                         'category', 'description', 'severity', 'status', 'adminNotes',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'reporterId', 'reporterName', 'targetDonationId', 'targetUserId',
+                         'category', 'description', 'severity', 'status', 'adminNotes',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidComplaint(incoming());
+      allow update: if isValidId(complaintId) && isSignedIn() && isAdmin() &&
+                       isValidComplaint(incoming()) &&
+                       incoming().reporterId == existing().reporterId &&
+                       incoming().createdAt == existing().createdAt;
+      allow delete: if isValidId(complaintId) && isAdmin();
+    }
+
+    match /reviews/{reviewId} {
+      allow get: if isValidId(reviewId) && isSignedIn();
+      allow list: if isSignedIn() && (
+        isAdmin() ||
+        resource.data.isPublic == true ||
+        resource.data.reviewerId == request.auth.uid
+      );
+      allow create: if isValidId(reviewId) && isSignedIn() &&
+                       incoming().reviewerId == request.auth.uid &&
+                       incoming().keys().hasAll([
+                         'donationId', 'reviewerId', 'reviewerName', 'targetUserId',
+                         'rating', 'comment', 'isPublic', 'createdAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'donationId', 'reviewerId', 'reviewerName', 'targetUserId',
+                         'rating', 'comment', 'isPublic', 'createdAt'
+                       ]) &&
+                       isValidReview(incoming());
+      allow update, delete: if isValidId(reviewId) && isAdmin();
+    }
+
+    match /audit_logs/{logId} {
+      allow get, list: if isAdmin();
+      allow create: if isValidId(logId) && isSignedIn() &&
+                       incoming().actorId == request.auth.uid &&
+                       incoming().keys().hasAll([
+                         'actorId', 'actorName', 'action', 'targetPath', 'summary', 'createdAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'actorId', 'actorName', 'action', 'targetPath', 'summary', 'createdAt'
+                       ]) &&
+                       isValidAuditLog(incoming());
+      allow update, delete: if false;
+    }
+  }
+}
